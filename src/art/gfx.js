@@ -35,13 +35,34 @@ let lazyDone = Promise.resolve();
 // дождаться картинок (для сцены комикса, если фоновая загрузка ещё идёт)
 export function whenImages(names) { return names.every(n => imgs.has(n)) ? Promise.resolve() : lazyDone; }
 export function addImages(list) { for (const n of list) if (!IMAGES.includes(n)) IMAGES.push(n); }
-export const img = n => FACES[n] ? faceVariant(n) : (STYLE.pixel && isScene(n)) ? pxScene(n) : (n === 'card_back' && COS.back) ? backVariant(COS.back)
-  : (ART.set !== 'base' && !STYLE.pixel && artImgs[ART.set]?.get(n)) || imgs.get(n);
+export const img = n => {
+  if (FACES[n]) return faceVariant(n);
+  if (STYLE.pixel && isScene(n)) return pxScene(n);
+  if (n === 'card_back' && COS.back) return backVariant(COS.back);
+  const a = (ART.set !== 'base' && !STYLE.pixel && artImgs[ART.set]?.get(n)) || imgs.get(n);
+  return a && CARD_TINT[n] && !STYLE.pixel && !TINT_BAKED.has(ART.set) ? tinted(a, n) : a;
+};
+// У каждой карты свой цвет: запоминается не только форма, но и цвет (в пиксельной версии это и помогало играть).
+// Наборы qwen и qink уже собраны с цветом (tools/compose_cards.py), остальным оттенок добавляется на лету.
+export const CARD_TINT = { card_helm: '#b02a20', card_shield: '#d4a020', card_spears: '#46601a', card_laurel: '#2f9a50', card_flask: '#1f8f8f', card_coin: '#4a72b8',
+  card_foe: '#3c4296', card_bolt: '#8040c0', card_deimos: '#b83c96', card_raven: '#5a2c52', card_phobos: '#7a1230', card_hound: '#d4561a', card_amphora: '#c47c5c',
+  card_skull: '#a29c8c', card_owl: '#dcd45c', card_horn: '#7e5634', card_lethe: '#86bcd0' };
+export const TINT_BAKED = new Set(['qwen', 'qink', 'silh', 'sin', 'cut', 'mig', 'flat', 'vase', 'lek', 'mos']);
+const tintCache = new WeakMap();
+function tinted(src, n) {
+  let m = tintCache.get(src); if (m) return m;
+  const w = src.width, h = src.height, c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d');
+  x.drawImage(src, 0, 0);
+  x.globalCompositeOperation = 'color'; x.globalAlpha = 0.62; x.fillStyle = CARD_TINT[n]; x.fillRect(0, 0, w, h);
+  x.globalAlpha = 1; x.globalCompositeOperation = 'destination-in'; x.drawImage(src, 0, 0);
+  tintCache.set(src, c); return c;
+}
 
 // ---- наборы арта для сравнения (только живопись): assets/art/<набор>/<имя>.webp, список — assets/art/manifest.json
 // Чего нет в наборе — берётся исходное (base). Загрузка — в фоне при выборе набора, кадр подменяется по прибытии файла.
 export const ART = { set: 'base', sets: ['base'], have: {}, loaded: {}, root: 'assets/art/' };
-export const ART_LABEL = { base: 'исходный', qwen: 'Qwen · акварель Миллера', qink: 'Qwen · чёрная тушь', qvase: 'Qwen · греческая ваза', z: 'Z · комикс' };
+export const ART_LABEL = { base: 'исходный', silh: 'A · силуэт и красная луна', sin: 'B · Sin City', cut: 'C · линогравюра', mig: 'D · Мигнола', flat: 'E · Тартаковский', vase: 'F · греческая вазопись', lek: 'G · белофонная лекиф', mos: 'H · античная мозаика', qwen: 'Qwen · акварель Миллера', qink: 'Qwen · чёрная тушь', qvase: 'Qwen · греческая ваза', z: 'Z · комикс' };
+const ART_CYCLE = ['sin', 'cut', 'mig', 'flat', 'vase', 'lek', 'mos'];   // F2 листает только их (остальные — по ?art=)
 const artImgs = {}, artQueued = {};
 // манифест; нет файла — наборов нет (переключатель покажет только «исходный»)
 export function loadArtManifest(root) {
@@ -49,7 +70,7 @@ export function loadArtManifest(root) {
   return fetch(ART.root + 'manifest.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : {}).catch(() => ({})).then(m => {
     const names = Object.keys(m || {}).filter(k => k !== 'base' && Array.isArray(m[k]) && m[k].length);
     for (const k of names) ART.have[k] = m[k];
-    ART.sets = ['base', ...['qwen', 'qink', 'qvase', 'z'].filter(k => names.includes(k)), ...names.filter(k => !['qwen', 'qink', 'qvase', 'z'].includes(k))];
+    ART.sets = ['base', ...ART_CYCLE.filter(k => names.includes(k))];
   });
 }
 // порядок: сцены (фоны, меню, комикс-плашки) → кадры рассказов → остальное (карты, интерфейс)
@@ -67,7 +88,7 @@ function artLoad(set) {
 }
 // выбрать набор; манифест перечитывается — дорисованные за это время файлы тоже подтянутся
 export function setArtSet(s) {
-  ART.set = ART.sets.includes(s) ? s : 'base';
+  ART.set = (ART.sets.includes(s) || ART.have[s]) ? s : 'base';
   artLoad(ART.set);
   if (ART.set !== 'base') { const cur = ART.set; loadArtManifest().then(() => { if (ART.set === cur) artLoad(cur); }); }
   return ART.set;
