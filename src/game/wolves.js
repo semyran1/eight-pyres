@@ -607,6 +607,16 @@ export function createWolves(app) {
       const hx = 514 + Math.cos(a) * 26, hy = 476 + Math.sin(a) * 26; pxLine(ctx, hx, hy, hx + Math.cos(a) * 64, hy + Math.sin(a) * 64, 4, PAL.bone);
       return;
     }
+    const hb = img('spr_hero_b');
+    if (hb) { // герой со спины: спрайт, «меч» — посох в замахе
+      const h = 190, w = h * hb.width / hb.height; ctx.save(); ctx.translate(480, 548);
+      ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(0, 2, 56, 10, 0, 0, TAU); ctx.fill();
+      ctx.drawImage(hb, -w / 2, -h + 4, w, h);
+      const hx = 40 + Math.cos(a) * 34, hy = -90 + Math.sin(a) * 34;
+      ctx.lineCap = 'round'; ctx.strokeStyle = '#2a1608'; ctx.lineWidth = 9; ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(hx + Math.cos(a) * 96, hy + Math.sin(a) * 96); ctx.stroke();
+      ctx.strokeStyle = '#c99a58'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(hx + Math.cos(a) * 96, hy + Math.sin(a) * 96); ctx.stroke();
+      ctx.restore(); return;
+    }
     ctx.save(); ctx.translate(480, 548);
     ctx.fillStyle = '#0a0607';
     ctx.beginPath(); ctx.moveTo(-64, 10); ctx.quadraticCurveTo(-62, -58, -44, -82); ctx.quadraticCurveTo(-24, -96, 0, -96); ctx.quadraticCurveTo(24, -96, 44, -82); ctx.quadraticCurveTo(62, -58, 64, 10); ctx.closePath(); ctx.fill();
@@ -644,8 +654,10 @@ export function createWolves(app) {
     if (L < 1) paintShade(ctx, s, { seed: r.seed || 1, fog, a: a * (1 - L), big: r.kind === 'alpha' });
     if (L > 0) {
       const f2 = 0.4 * (1 - L);
-      if (r.kind === 'sheep') paintSheepF(ctx, 0, 0, s, { t: r.t, fog: f2, a: a * L, shadow: null });
-      else paintWolfF(ctx, 0, 0, s, { t: r.t, fog: f2, a: a * L, shadow: null, big: r.kind === 'alpha', hit: r.hitT, open: r.state === 'lunge' || r.u > 0.93, scar: r.scar });
+      const spr = img(r.kind === 'sheep' ? 'spr_sheep_f' : 'spr_wolf_f');
+      if (spr) { const w = (r.kind === 'sheep' ? 96 : r.kind === 'alpha' ? 170 : 128) * s * 1.33, h = w * spr.height / spr.width; ctx.save(); ctx.globalAlpha = a * L; ctx.drawImage(spr, -w / 2, -h + 6, w, h); ctx.restore(); }
+      else if (r.kind === 'sheep') paintSheepF(ctx, 0, 0, s, { t: r.t, fog: f2, a: a * L, shadow: null });
+      else if (!spr) paintWolfF(ctx, 0, 0, s, { t: r.t, fog: f2, a: a * L, shadow: null, big: r.kind === 'alpha', hit: r.hitT, open: r.state === 'lunge' || r.u > 0.93, scar: r.scar });
     }
     if (!snap && L < 1 && r.lit) { ctx.globalCompositeOperation = 'lighter'; const rg = ctx.createRadialGradient(0, -60 * s, 0, 0, -60 * s, 110 * s); rg.addColorStop(0, `rgba(255,200,140,${0.4 * (1 - L) * a})`); rg.addColorStop(1, 'rgba(255,160,90,0)'); ctx.fillStyle = rg; ctx.fillRect(-120 * s, -180 * s, 240 * s, 220 * s); } // вспышка света при проявлении
     ctx.restore();
@@ -871,6 +883,8 @@ export function createWolves(app) {
       pxSprite(ctx, SPR.FATHER, x - 24, y - 112, 4, { r: PAL.red, c: PAL.cream, i: PAL.ink, k: PAL.body, g: PAL.grey2 });
       const a = swinging ? -0.9 + Math.sin(t * 30) * 0.5 : -0.4; pxLine(ctx, x + 20, y - 52, x + 20 + Math.sin(a) * 44, y - 52 - Math.cos(a) * 44, 4, PAL.bone); return;
     }
+    const hero = img('spr_hero');
+    if (hero) { const h = 128, w = h * hero.width / hero.height; ctx.save(); ctx.translate(x, y); ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(0, 3, 26, 6, 0, 0, TAU); ctx.fill(); if (swinging) ctx.rotate(Math.sin(t * 30) * 0.12); ctx.drawImage(hero, -w / 2, -h, w, h); ctx.restore(); return; }
     ctx.save(); ctx.translate(x, y); ctx.fillStyle = '#0b0708';
     // плащ и тело
     ctx.beginPath(); ctx.moveTo(-18, 0); ctx.lineTo(-24, -52); ctx.quadraticCurveTo(-14, -78, 0, -80); ctx.quadraticCurveTo(14, -78, 20, -52); ctx.lineTo(16, 0); ctx.closePath(); ctx.fill();
@@ -886,6 +900,8 @@ export function createWolves(app) {
     if (STYLE.pixel) { const fr = Math.floor(s.t * 8) % 2 ? SPR.SHEEP_B : SPR.SHEEP_A, sh = s.scared > 0 ? Math.round(Math.sin(s.t * 40)) * 4 : 0;
       pxSpriteFlip(ctx, fr, Math.round((s.x - 24) / 4) * 4 + sh, Math.round((s.y - 26) / 4) * 4, 4, { w: s.carried ? '#b58a8a' : PAL.cream, k: PAL.ink, e: PAL.ink }, s.x > 480); return; }
     const bob = Math.sin(s.t * 3) * 1.2, x = s.x, y = s.y + bob;
+    const spS = img('spr_sheep');
+    if (spS) { const w = 62, h = w * spS.height / spS.width; ctx.save(); ctx.translate(x, y); if (s.scared > 0) ctx.translate(Math.sin(s.t * 40) * 2, 0); ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(0, 4, 20, 4, 0, 0, TAU); ctx.fill(); if (s.x > 480) ctx.scale(-1, 1); ctx.globalAlpha = s.carried ? 0.6 : 1; ctx.drawImage(spS, -w / 2, -h + 4, w, h); ctx.restore(); return; }
     ctx.save(); ctx.translate(x, y); if (s.scared > 0) ctx.translate(Math.sin(s.t * 40) * 2, 0);
     ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(0, 4, 18, 4, 0, 0, TAU); ctx.fill();
     ctx.fillStyle = '#1a1214'; for (const lx of [-9, -3, 4, 10]) ctx.fillRect(lx, -6, 2.5, 10);
@@ -906,6 +922,11 @@ export function createWolves(app) {
     ctx.save(); ctx.translate(w.x, w.y); ctx.scale(w.dir * s, s);
     if (w.dead) { ctx.globalAlpha = Math.max(0, 1 - (w.deadT || 0)); ctx.rotate(Math.PI / 2 * Math.min(1, (w.deadT || 0) * 4)); }
     if (w.hitT > 0) ctx.translate(-8 * w.hitT * 4, 0);
+    const spW = img('spr_wolf');
+    if (spW) { const ww = 92, hh = ww * spW.height / spW.width; ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(0, 3, 26, 5, 0, 0, TAU); ctx.fill(); ctx.drawImage(spW, -ww / 2, -hh + 6 + Math.sin(w.t * 16) * 1.5, ww, hh);
+      if (w.hitT > 0) { ctx.globalCompositeOperation = 'source-atop'; } ctx.restore();
+      if (!w.dead && w.kind !== 'wolf') for (let i = 0; i < w.hp; i++) { ctx.fillStyle = '#ff6a50'; ctx.fillRect(w.x - 10 + i * 8, w.y - 64 * s / 1.3, 6, 4); }
+      return; }
     ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(0, 3, 26, 5, 0, 0, TAU); ctx.fill();
     ctx.fillStyle = w.hitT > 0 ? '#5a1010' : w.kind === 'hound' ? '#1a0806' : '#0c0a0b';
     // ноги

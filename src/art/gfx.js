@@ -61,8 +61,8 @@ function tinted(src, n) {
 // ---- наборы арта для сравнения (только живопись): assets/art/<набор>/<имя>.webp, список — assets/art/manifest.json
 // Чего нет в наборе — берётся исходное (base). Загрузка — в фоне при выборе набора, кадр подменяется по прибытии файла.
 export const ART = { set: 'base', sets: ['base'], have: {}, loaded: {}, root: 'assets/art/' };
-export const ART_LABEL = { base: 'исходный', silh: 'A · силуэт и красная луна', sin: 'B · Sin City', cut: 'C · линогравюра', mig: 'D · Мигнола', flat: 'E · Тартаковский', vase: 'F · греческая вазопись', lek: 'G · белофонная лекиф', mos: 'H · античная мозаика', qwen: 'Qwen · акварель Миллера', qink: 'Qwen · чёрная тушь', qvase: 'Qwen · греческая ваза', z: 'Z · комикс' };
-const ART_CYCLE = ['sin', 'cut', 'mig', 'flat', 'vase', 'lek', 'mos'];   // F2 листает только их (остальные — по ?art=)
+export const ART_LABEL = { base: 'исходный', silh: 'A · силуэт и красная луна', sin: 'Sin City · чёрная тушь', cut: 'C · линогравюра', mig: 'D · Мигнола', flat: 'E · Тартаковский', vase: 'F · греческая вазопись', lek: 'G · белофонная лекиф', mos: 'Античная мозаика', qwen: 'Qwen · акварель Миллера', qink: 'Qwen · чёрная тушь', qvase: 'Qwen · греческая ваза', z: 'Z · комикс' };
+const ART_CYCLE = ['sin', 'mos'];   // F2 листает только их (остальные — по ?art=)
 const artImgs = {}, artQueued = {};
 // манифест; нет файла — наборов нет (переключатель покажет только «исходный»)
 export function loadArtManifest(root) {

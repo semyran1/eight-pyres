@@ -81,7 +81,7 @@ export function createField(app) {
     return deck.map((d, i) => {
       const s = L.slots[i];
       return { i, ...d, key: vkey(d), slot: i, x: s.x, y: deal ? s.y + 420 : s.y, face: 0, open: false, matched: false, gone: false, lift: 0, shake: 0, alpha: 1, glow: 0, seen: false, vis: false, peek: 0, hint: 0, reject: 0, fly: null,
-        move: deal ? { x0: s.x, y0: s.y + 420, x1: s.x, y1: s.y, t: -i * 0.05, dur: 0.55 } : null };
+        rot: deal ? (Math.random() - 0.5) * 0.16 : 0, move: deal ? { x0: s.x, y0: s.y + 420, x1: s.x, y1: s.y, t: -i * 0.07, dur: 0.5, back: true } : null };
     });
   }
   // «дымка» (Гнев Ареса): в показе видна лишь часть карт — случайные индексы
@@ -156,7 +156,7 @@ export function createField(app) {
     if (c.pinT > 0) { c.shake = 0.2; return false; } // карту держит ворон/пёс: сначала перестановка
     if (c.open || S.sel.length >= 2 || S.resolveT > 0 || S.water <= 0) return false;
     c.prevVis = c.vis; c.vis = true;   // «строгая память»: карта, которую уже открывали
-    c.open = true; c.seen = true; S.sel.push(c); sfx('flip', { vol: 0.7 }); coachEvent('flip');
+    c.open = true; c.seen = true; S.sel.push(c); sfx('flip', { vol: 0.7, rate: 0.94 + Math.random() * 0.14 }); coachEvent('flip');
     if (c.type === 'raven' && S.ravens) setTimeout0(() => ravenSwap(c), 0.35);
     if (c.type === 'horn' && S.horn) setTimeout0(() => hornAlarm(c), 0.35);
     if (S.sel.length === 2) { S.attempts++; S.resolveT = 0.42; }
@@ -219,6 +219,7 @@ export function createField(app) {
   }
 
   function accept(a, b) {
+    S.hitstop = 0.07; S.shake = Math.max(S.shake, 0.14);
     S.streak++; S.favor++; S.shards += 1;
     for (const c of [a, b]) { c.matched = true; c.glow = 1; }
     S.sel = [];
@@ -482,6 +483,7 @@ export function createField(app) {
       const inp = app.inp;
       if (inp.hit('Escape') && ['play', 'preview', 'intro'].includes(S.phase)) S.paused = !S.paused;
       if (S.paused) { inp.endStep(); return; }
+      if (S.hitstop > 0) { S.hitstop -= dt; dt *= 0.06; }
       S.pt += dt; clock += dt; rain.update(dt);
       for (const T of S.tele) T.t += dt; S.tele = S.tele.filter(T => T.t < T.dur);
       if (S.tip) { S.tip.t += dt; const P = inp.pointer, r = S.tip.r; if (P.pressed && S.tip.t > 0.1 && !(P.x > r.x && P.x < r.x + r.w && P.y > r.y && P.y < r.y + r.h)) S.tip = null; } fog.update(dt); parts.update(dt, 600);
@@ -505,7 +507,17 @@ export function createField(app) {
         c.peek = Math.max(0, c.peek - dt); c.shake = Math.max(0, c.shake - dt); c.glow = Math.max(0, c.glow - dt * 1.2); c.hint = Math.max(0, c.hint - dt);
         const hov = S.phase === 'play' && hit(c, inp.pointer.x, inp.pointer.y) && !c.matched;
         c.lift += ((c.open || hov ? 1 : 0) - c.lift) * Math.min(1, dt * 12);
-        if (c.move) { const m = c.move; m.t += dt; const k = ease.inOutSine(Math.min(1, m.t / m.dur)); c.x = lerp(m.x0, m.x1, k); c.y = lerp(m.y0, m.y1, k) - (m.arc ? Math.sin(k * Math.PI) * 40 : Math.sin(k * Math.PI) * 14); if (m.t >= m.dur) { c.x = m.x1; c.y = m.y1; c.move = null; } }
+        { // «физика» карты: пружина масштаба, наклон к курсору, затухающее покачивание
+          const P = inp.pointer, step = Math.min(dt, 1 / 30);
+          c.hs ??= 1; c.hv ??= 0; c.rot ??= 0; c.rv ??= 0; c.tx ??= 0; c.ty ??= 0;
+          const tgt = (hov ? 1.07 : 1) * (c.open ? 1.02 : 1);
+          c.hv += ((tgt - c.hs) * 260 - c.hv * 22) * step; c.hs += c.hv * step;
+          c.tx += ((hov ? clamp((P.x - c.x) / (S.L.cw / 2), -1, 1) : 0) - c.tx) * Math.min(1, dt * 14);
+          c.ty += ((hov ? clamp((P.y - c.y) / (S.L.ch / 2), -1, 1) : 0) - c.ty) * Math.min(1, dt * 14);
+          c.rv += (-c.rot * 180 - c.rv * 14) * step; c.rot += c.rv * step;
+          const side = c.face > 0.5; if (c.sideWas !== undefined && c.sideWas !== side) c.rv += (Math.random() < 0.5 ? -1 : 1) * 1.6; c.sideWas = side;
+        }
+        if (c.move) { const m = c.move; m.t += dt; const mt = Math.max(0, m.t), k = (m.back ? ease.outBack : ease.inOutSine)(Math.min(1, mt / m.dur)); c.x = lerp(m.x0, m.x1, k); c.y = lerp(m.y0, m.y1, k) - (m.back ? 0 : m.arc ? Math.sin(k * Math.PI) * 40 : Math.sin(k * Math.PI) * 14); if (m.t >= m.dur) { c.x = m.x1; c.y = m.y1; c.move = null; c.rv = (c.rv || 0) + (Math.random() - 0.5) * 2.4; } }
         if (c.fly) { const f = c.fly; f.t += dt; const k = ease.inCubic(Math.min(1, f.t / f.dur)); c.x = lerp(f.x0, f.x1, k); c.y = lerp(f.y0, f.y1, k) - Math.sin(k * Math.PI) * 60; c.alpha = 1 - k * 0.7; c.flyScale = 1 - k * 0.6; if (f.t >= f.dur) { c.fly = null; c.gone = true; parts.burst(c.x, c.y, 14, { color: f.water ? ['#9fd0ff', '#fff'] : ['#ffcf8a', '#fff', '#ff7a3a'], speed: [40, 160], life: [0.3, 0.8], size: [1, 3], glow: true }); } }
         if (c.fade) { c.fade = Math.max(0, c.fade - dt * 1.5); c.alpha = c.fade; if (c.fade <= 0) c.gone = true; }
       }
@@ -646,16 +658,21 @@ export function createField(app) {
     return img(CARDS[c.type].img);
   }
   function drawCard(ctx, c, w, h) {
-    const face = c.face, sx = Math.abs(Math.cos(face * Math.PI)), front = face > 0.5;
-    const lift = c.lift * 6 + (c.glow ? 4 : 0);
-    const sc = (c.flyScale ?? 1);
+    const fd = c.face * c.face * (3 - 2 * c.face);                 // плавный переворот: замедление у ребра
+    const face = fd, sx = Math.abs(Math.cos(face * Math.PI)), front = c.face > 0.5;
+    const pop = Math.sin(Math.PI * Math.min(1, Math.max(0, c.face)));
+    const lift = c.lift * 6 + (c.glow ? 4 : 0) + pop * 10;
+    const L = Math.min(1.3, c.lift + pop * 0.8 + (c.move || c.fly ? 0.5 : 0));
+    const sc = (c.flyScale ?? 1), hs = c.hs ?? 1;
+    const idle = Math.sin(S.time * 1.3 + c.i * 1.7) * 0.0017;
     let x = c.x + (c.shake ? Math.sin(c.shake * 60) * 5 * c.shake / 0.35 : 0) + (c.warn > 0 ? Math.sin(S.time * 55) * 2.2 : 0), y = c.y - lift;
     ctx.save(); ctx.globalAlpha = c.alpha;
-    // тень
-    ctx.fillStyle = `rgba(0,0,0,${0.35 + c.lift * 0.15})`; if (STYLE.pixel) ctx.fillRect(Math.round((c.x - w * 0.42 * sx * sc) / 4) * 4, Math.round((c.y + h / 2 - 4 + lift * 0.3) / 4) * 4, Math.round(w * 0.84 * sx * sc / 4) * 4, 8); else { ctx.beginPath(); ctx.ellipse(c.x + 3, c.y + h / 2 - 2 + lift * 0.3, w * 0.45 * sx * sc, 6 + lift * 0.6, 0, 0, TAU); ctx.fill(); }
-    ctx.translate(x, y); ctx.scale(Math.max(0.02, sx) * sc, sc);
+    if (STYLE.pixel) { ctx.fillStyle = `rgba(0,0,0,${0.35 + c.lift * 0.15})`; ctx.fillRect(Math.round((c.x - w * 0.42 * sx * sc) / 4) * 4, Math.round((c.y + h / 2 - 4 + lift * 0.3) / 4) * 4, Math.round(w * 0.84 * sx * sc / 4) * 4, 8); }
+    ctx.translate(x, y);
+    if (!STYLE.pixel) { ctx.rotate((c.rot || 0) + idle + (c.tx || 0) * 0.04); ctx.transform(1, (c.tx || 0) * 0.045, -(c.ty || 0) * 0.04, 1, 0, 0); ctx.shadowColor = `rgba(0,0,0,${Math.max(0.12, 0.5 - 0.18 * L) * c.alpha})`; ctx.shadowBlur = 6 + 18 * L; ctx.shadowOffsetY = 3 + 12 * L; ctx.shadowOffsetX = -(c.tx || 0) * 3; }
+    ctx.scale(Math.max(0.02, sx) * sc * (STYLE.pixel ? 1 : hs), sc * (STYLE.pixel ? 1 : hs * (1 + pop * 0.05)));
     const im = front ? cardImg(c) : img('card_back');
-    if (im) ctx.drawImage(im, -w / 2, -h / 2, w, h);
+    if (im) { ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetX = ctx.shadowOffsetY = 0; }
     if (front) {
       if (c.badge) drawBadge(ctx, c.badge, 0, h * 0.3, w * 0.2);
       // «тень» (знамение «Тени»): лицо как рубашка, только с тёмной дымкой — открытая тень похожа на закрытую карту
@@ -674,8 +691,7 @@ export function createField(app) {
   function drawBoard(ctx) {
     const { cw, ch } = S.L;
     if (S.rowFlash) { const s = S.L.slots[S.rowFlash.r * S.cols]; ctx.fillStyle = `rgba(255,120,60,${0.18 * (1 - S.rowFlash.t / 0.8)})`; ctx.fillRect(BOARD.x, s.y - ch / 2 - 6, BOARD.w, ch + 12); }
-    // гнёзда пустых мест — «следы» на земле
-    for (const s of S.L.slots) { ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(s.x - cw / 2 + 4, s.y - ch / 2 + 4, cw - 8, ch - 8); }
+    // (пятна на пустых местах убраны: после ухода карты тени не остаётся)
     const order = S.cards.filter(c => !c.gone).sort((a, b) => (a.lift + (a.move ? 2 : 0) + (a.fly ? 3 : 0)) - (b.lift + (b.move ? 2 : 0) + (b.fly ? 3 : 0)));
     for (const c of order) drawCard(ctx, c, cw, ch);
     if (S.gazeMode) text(ctx, 'Взор Афины: выбери карту', BOARD.x + BOARD.w / 2, BOARD.y - 6, { size: 18, color: '#cfe3ff' });
