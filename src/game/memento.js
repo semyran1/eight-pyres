@@ -148,6 +148,9 @@ export function createMemento(app) {
     text(ctx, M.show ? 'Слушай напев…' : `Повтори: ${M.input.length} / ${M.seq.length}`, W / 2, 120, { size: 18, color: '#d9c2a8' });
     if (STYLE.pixel) { const P = app.inp.pointer, xs = [0, 1, 2, 3, 4].map(LYRE_X); pxLyre(ctx, { xs, y0: LY0, y1: LY1, lit: M.flash[0], litK: M.flash[1], hover: M.show ? -1 : xs.findIndex(x => Math.abs(P.x - x) < 29 && P.y > LY0 - 10 && P.y < LY1 + 20), cols: STR_COL, t: M.t }); return; }
     ctx.save(); ctx.lineCap = 'round';
+    const spL = img('spr_lyre');
+    if (spL) { const lw = 380, lh = lw * spL.height / spL.width; ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(480, 118 + lh, 150, 14, 0, 0, TAU); ctx.fill(); ctx.drawImage(spL, 480 - lw / 2, 118, lw, lh); }
+    else {
     const xl = LYRE_X(0) - 46, xr = LYRE_X(4) + 46;
     for (const [side, x0] of [[-1, xl], [1, xr]]) {
       for (const [lw, col] of [[16, '#5a3a1e'], [9, '#c9954f']]) { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(x0 - side * 6, LY1 + 26); ctx.bezierCurveTo(x0 + side * 46, LY1 - 40, x0 + side * 54, LY0 + 40, x0 + side * 4, LY0 - 34); ctx.stroke(); }
@@ -157,6 +160,7 @@ export function createMemento(app) {
     const bx = 480, by = LY1 + 30, gb = ctx.createRadialGradient(bx, by - 10, 10, bx, by, 150); gb.addColorStop(0, '#7a5230'); gb.addColorStop(1, '#2e1c10');
     ctx.fillStyle = gb; ctx.beginPath(); ctx.ellipse(bx, by, 150, 34, 0, 0, TAU); ctx.fill();
     ctx.strokeStyle = 'rgba(230,190,120,0.35)'; ctx.lineWidth = 1.5; for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.ellipse(bx + k * 48, by, 22, 20, 0, 0, TAU); ctx.stroke(); }
+    }
     for (let i = 0; i < 5; i++) {
       const lit = M.flash[0] === i && M.flash[1] > 0, x = LYRE_X(i), vib = lit ? Math.sin(M.t * 80) * 3 * M.flash[1] : 0;
       const P = app.inp.pointer; if (!M.show && Math.abs(P.x - x) < 29 && P.y > LY0 - 10 && P.y < LY1 + 20) { ctx.fillStyle = 'rgba(255,220,160,0.10)'; ctx.fillRect(x - 28, LY0 - 10, 56, LY1 - LY0 + 30); }

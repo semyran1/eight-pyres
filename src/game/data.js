@@ -81,11 +81,11 @@ export const CAMPAIGN = [
   { t: 'story', id: 'ch1' }, { t: 'field', id: 'f1' }, { t: 'story', id: 'tale0' }, { t: 'memento', kind: 'lyre', son: 0 }, { t: 'field', id: 'f2' }, { t: 'story', id: 'tale1' }, { t: 'memento', kind: 'formation', son: 1 },
   { t: 'story', id: 'memory1' }, { t: 'wolves', id: 't1' },
   { t: 'story', id: 'ch2' }, { t: 'field', id: 'f3' }, { t: 'story', id: 'tale2' }, { t: 'memento', kind: 'details', son: 2 }, { t: 'field', id: 'f4' }, { t: 'story', id: 'tale3' }, { t: 'memento', kind: 'lyre', son: 3 },
-  { t: 'story', id: 'memory2' }, { t: 'wolves', id: 'h1' },
+  { t: 'story', id: 'memory2' }, { t: 'wolves', id: 'b1' },
   { t: 'story', id: 'ch3' }, { t: 'field', id: 'f5' }, { t: 'story', id: 'tale4' }, { t: 'memento', kind: 'formation', son: 4 }, { t: 'field', id: 'f6' }, { t: 'story', id: 'tale5' }, { t: 'memento', kind: 'lyre', son: 5 },
   { t: 'story', id: 'memory3' }, { t: 'wolves', id: 't2' },
   { t: 'story', id: 'ch4' }, { t: 'field', id: 'f7' }, { t: 'story', id: 'tale6' }, { t: 'memento', kind: 'details', son: 6 }, { t: 'field', id: 'f8' }, { t: 'story', id: 'tale7' }, { t: 'memento', kind: 'lyre', son: 7 },
-  { t: 'story', id: 'memory4' }, { t: 'wolves', id: 'h2' },
+  { t: 'story', id: 'memory4' }, { t: 'wolves', id: 'b2' },
   { t: 'story', id: 'styx' }, { t: 'field', id: 'names' },
   { t: 'story', id: 'epilogue' }, { t: 'end' },
 ];
@@ -108,6 +108,10 @@ const STORY_TITLES = { tale0: 'Рассказ сына', tale1: 'Рассказ 
 // hide — волк за овцой, broMax — сколько своих овец можно задеть до конца ночи (счётчик погибших овец автора).
 export const NIGHTS = {
   t1: { mode: 'toward', title: 'Воспоминание: волчья ночь', dur: 42, hearts: 3, broMax: 3, iv: [1.5, 0.95], dbl: [0.05, 0.2], fogT: [2.4, 3.4], win: [1.25, 1.05], fog: [0.55, 0.72], mimic: [0.3, 0.35], stall: [0.12, 0.2], sheep: 0.38, alpha: 0.08, hide: 0.1, revealU: 0.64 },
+  // b1 «Стадо»: овец почти вдвое больше, они идут плотно и парами — бить нельзя, волки прячутся за ними
+  b1: { mode: 'toward', title: 'Воспоминание: стадо', dur: 48, hearts: 3, broMax: 4, iv: [1.2, 0.8], dbl: [0.3, 0.45], fogT: [2.2, 3.2], win: [1.1, 0.8], fog: [0.6, 0.78], mimic: [0.45, 0.55], stall: [0.1, 0.18], sheep: 0.58, alpha: 0.1, hide: 0.38, revealU: 0.64 },
+  // b2 «Набег»: мало овец, вожаки с воем и остановки в тумане — решать надо в самый последний миг
+  b2: { mode: 'toward', title: 'Воспоминание: набег', dur: 56, hearts: 3, broMax: 2, iv: [1.1, 0.62], dbl: [0.2, 0.4], fogT: [2.0, 3.0], win: [0.85, 0.55], fog: [0.75, 0.95], mimic: [0.4, 0.55], stall: [0.3, 0.42], sheep: 0.25, alpha: 0.32, hide: 0.3, revealU: 0.68 },
   h1: { mode: 'herd', title: 'Воспоминание: стадо', dur: 50, waves: [[0, 2], [6, 2], [12, 3], [20, 3], [28, 4], [36, 4], [43, 4]], alpha: 0.12, hound: false, speed: 1 },
   t2: { mode: 'toward', title: 'Воспоминание: последняя спокойная ночь', dur: 50, hearts: 3, broMax: 3, iv: [1.25, 0.72], dbl: [0.15, 0.32], fogT: [2.2, 3.3], win: [0.9, 0.62], fog: [0.7, 0.92], mimic: [0.4, 0.5], stall: [0.2, 0.3], sheep: 0.38, alpha: 0.18, hide: 0.25, revealU: 0.66 },
   h2: { mode: 'herd', title: 'Воспоминание: набег', dur: 60, waves: [[0, 3], [5, 3], [11, 4], [18, 4], [26, 5], [34, 5], [43, 6], [51, 6]], alpha: 0.25, hound: true, speed: 1.18 },
@@ -206,8 +210,6 @@ export const STORIES = {
     { img: 'c_face', k0: [0.4, 0.5, 1.2], k1: [0.38, 0.45, 1.38], dur: 4.6, text: 'Где я?', who: 'father', sfx: [[0.6, 'thunder2', 0.5]], fx: ['rain'] },
     { img: 'c_kneel', k0: [0.62, 0.6, 1.25], k1: [0.5, 0.5, 1.0], dur: 5.5, text: 'Этот гребень. Я сам выбирал для него конский волос.', who: 'father', fx: ['rain'] },
     { img: 'c_kneel_tall', tall: true, k0: [0.5, 0.3, 1.0], k1: [0.5, 0.7, 1.0], dur: 4.5, text: 'Сын.', who: 'father', fx: ['rain'] },
-    { img: 'c_pray', tall: true, k0: [0.5, 0.75, 1.0], k1: [0.5, 0.3, 1.0], dur: 6.5, text: 'Зевс. Дождь гасит огонь. Дай молнию. Я провожу его как должно.', who: 'father', sfx: [[2.5, 'thunder', 0.6]], fx: ['rain'] },
-    { img: 'c_bolt', tall: true, k0: [0.5, 0.2, 1.0], k1: [0.5, 0.6, 1.08], dur: 4.0, text: 'Небо ответило.', who: 'narr', fx: ['bolt', 'shake'], sfx: [[0.1, 'bolt', 0.9]] },
     { img: 'p1_walk_field', k0: [0.52, 0.3, 1.25], k1: [0.5, 0.42, 1.05], capLow: true, dur: 6.0, text: 'Восемь сыновей. Одно поле. Я найду каждого.', who: 'narr', fx: ['rain', 'fog'] },
   ],
   tale0: [

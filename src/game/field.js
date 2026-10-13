@@ -232,7 +232,7 @@ export function createField(app) {
       case 'shield': R.shield = true; toAltar(); sfx('draw', { vol: 0.4 }); say(line('shield'), 'father', 2); break;
       case 'spears': R.spears++; toAltar(); sfx('slash', { vol: 0.35 }); sayL('spears', 2); break;
       case 'coin': R.coin = true; toAltar(); sfx('coin', { vol: 0.8 }); say(line('coin'), 'father', 3); break;
-      case 'bolt': R.bolt = true; toAltar(); sfx('thunder2', { vol: 0.6 }); say(line('bolt'), 'father', 4); startPyre(); break;
+      case 'bolt': R.bolt = true; toAltar(); sfx('thunder2', { vol: 0.6 }); say(app.save.prayed ? line('bolt') : 'Зевс. Дождь гасит огонь. Дай молнию. Я провожу его как должно.', 'father', 4); app.save.prayed = true; startPyre(); break;
       case 'flask': case 'amphora': {
         const add = Math.max(1, (t === 'flask' ? S.def.fl : (S.def.am || 4)) + S.mods.flask + (t === 'flask' && !S.flaskTaken && S.water <= 2 ? S.mods.flaskFirst : 0)); if (t === 'flask' && S.water <= 2) S.flaskTaken = true;   // ступень «Глубокие фляги»: первая фляга у пересохшего горла лучше
         coachEvent('water');

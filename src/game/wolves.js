@@ -655,7 +655,7 @@ export function createWolves(app) {
     if (L > 0) {
       const f2 = 0.4 * (1 - L);
       const spr = img(r.kind === 'sheep' ? 'spr_sheep_f' : 'spr_wolf_f');
-      if (spr) { const w = (r.kind === 'sheep' ? 96 : r.kind === 'alpha' ? 170 : 128) * s * 1.33, h = w * spr.height / spr.width; ctx.save(); ctx.globalAlpha = a * L; ctx.drawImage(spr, -w / 2, -h + 6, w, h); ctx.restore(); }
+      if (spr) { const w = (r.kind === 'sheep' ? 118 : r.kind === 'alpha' ? 124 : 92) * s * 1.33, h = w * spr.height / spr.width; ctx.save(); ctx.globalAlpha = a * L; ctx.drawImage(spr, -w / 2, -h + 6, w, h); ctx.restore(); }
       else if (r.kind === 'sheep') paintSheepF(ctx, 0, 0, s, { t: r.t, fog: f2, a: a * L, shadow: null });
       else if (!spr) paintWolfF(ctx, 0, 0, s, { t: r.t, fog: f2, a: a * L, shadow: null, big: r.kind === 'alpha', hit: r.hitT, open: r.state === 'lunge' || r.u > 0.93, scar: r.scar });
     }
@@ -901,7 +901,7 @@ export function createWolves(app) {
       pxSpriteFlip(ctx, fr, Math.round((s.x - 24) / 4) * 4 + sh, Math.round((s.y - 26) / 4) * 4, 4, { w: s.carried ? '#b58a8a' : PAL.cream, k: PAL.ink, e: PAL.ink }, s.x > 480); return; }
     const bob = Math.sin(s.t * 3) * 1.2, x = s.x, y = s.y + bob;
     const spS = img('spr_sheep');
-    if (spS) { const w = 62, h = w * spS.height / spS.width; ctx.save(); ctx.translate(x, y); if (s.scared > 0) ctx.translate(Math.sin(s.t * 40) * 2, 0); ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(0, 4, 20, 4, 0, 0, TAU); ctx.fill(); if (s.x > 480) ctx.scale(-1, 1); ctx.globalAlpha = s.carried ? 0.6 : 1; ctx.drawImage(spS, -w / 2, -h + 4, w, h); ctx.restore(); return; }
+    if (spS) { const w = 84, h = w * spS.height / spS.width; ctx.save(); ctx.translate(x, y); if (s.scared > 0) ctx.translate(Math.sin(s.t * 40) * 2, 0); ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(0, 4, 20, 4, 0, 0, TAU); ctx.fill(); if (s.x > 480) ctx.scale(-1, 1); ctx.globalAlpha = s.carried ? 0.6 : 1; ctx.drawImage(spS, -w / 2, -h + 4, w, h); ctx.restore(); return; }
     ctx.save(); ctx.translate(x, y); if (s.scared > 0) ctx.translate(Math.sin(s.t * 40) * 2, 0);
     ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(0, 4, 18, 4, 0, 0, TAU); ctx.fill();
     ctx.fillStyle = '#1a1214'; for (const lx of [-9, -3, 4, 10]) ctx.fillRect(lx, -6, 2.5, 10);
