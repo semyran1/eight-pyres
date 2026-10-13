@@ -70,7 +70,7 @@ export function loadArtManifest(root) {
   return fetch(ART.root + 'manifest.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : {}).catch(() => ({})).then(m => {
     const names = Object.keys(m || {}).filter(k => k !== 'base' && Array.isArray(m[k]) && m[k].length);
     for (const k of names) ART.have[k] = m[k];
-    ART.sets = ['base', ...ART_CYCLE.filter(k => names.includes(k))];
+    ART.sets = ART_CYCLE.some(k => names.includes(k)) ? ART_CYCLE.filter(k => names.includes(k)) : ['base'];
   });
 }
 // порядок: сцены (фоны, меню, комикс-плашки) → кадры рассказов → остальное (карты, интерфейс)
@@ -516,6 +516,11 @@ export function drawGlyph(ctx, g, x, y, r, col = '#f2e6d6') {
 // Герб сына: круглый щит с ободом цвета гребня и знаком
 export function drawBadge(ctx, son, x, y, r) {
   if (STYLE.pixel) return pxBadge(ctx, son, x, y, r);
+  const emb = son.emb != null ? img('emb' + son.emb) : null;
+  if (emb) { // герб набора: круглый щит с гречeским знаком, кольцо цвета гребня
+    ctx.save(); ctx.drawImage(emb, x - r * 1.06, y - r * 1.06, r * 2.12, r * 2.12);
+    ctx.lineWidth = Math.max(2, r * 0.12); ctx.strokeStyle = son.crest; ctx.beginPath(); ctx.arc(x, y, r * 1.08, 0, TAU); ctx.stroke(); ctx.restore(); return;
+  }
   ctx.save();
   ctx.fillStyle = '#1a1214'; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
   ctx.lineWidth = r * 0.22; ctx.strokeStyle = son.crest; ctx.beginPath(); ctx.arc(x, y, r * 0.86, 0, TAU); ctx.stroke();

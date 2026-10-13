@@ -172,7 +172,7 @@ function loadFonts() {
 }
 initPlatform().then(() => setLang(Q.get('lang') || save.settings.lang || pickLang(platform.lang))).then(() => Promise.all([loadImages(), loadSounds(), loadFonts(), loadArtManifest(Q.get('artroot'))])).then(() => {
   loaded = true; loadingDone();
-  setArtSet(Q.get('art') || save.settings.artSet || 'base');   // ?art=qwen|z|base — для проверок
+  setArtSet(Q.get('art') || (['sin', 'mos'].includes(save.settings.artSet) ? save.settings.artSet : 'sin'));   // ?art=qwen|z|base — для проверок
   if (Q.has('field')) setScene(field, { id: Q.get('field') });
   else if (Q.has('wolves')) setScene(wolves, { id: Q.get('wolves') });
   else if (Q.has('memento')) setScene(memento, { kind: Q.get('memento'), son: +(Q.get('son') || 0) });

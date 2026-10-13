@@ -2,7 +2,7 @@
 // текст печатается в рамке «как в комиксе» (белая двойная обводка из оригинала), звуки по таймкодам.
 // Клик — дописать текст / следующий кадр; «Пропустить» — вся сцена.
 import { STORIES, WHO, SONS } from './data.js';
-import { whenImages, img, W, H, text, wrap, comicBox, button, drawCam, drawTall, Rain, Fog, boltPath, drawBolt, drawSky, drawConstellation, drawPost, STYLE, measure } from '../art/gfx.js';
+import { whenImages, img, W, H, text, wrap, comicBox, button, drawCam, drawTall, Rain, Fog, boltPath, drawBolt, drawSky, drawConstellation, drawPost, STYLE, measure, ART } from '../art/gfx.js';
 import { pxFrame, pxPanel } from '../art/pixel.js';
 import { sfx, setAmbient, playMusic } from '../engine/audio.js';
 import { setMood } from '../engine/score.js';
@@ -153,7 +153,39 @@ export function createStory(app) {
   function next() { if (st.i + 1 >= st.panels.length) finish(); else startPanel(st.i + 1); }
   function finish() { if (st.done) return; st.done = true; const f = st.onDone; f && f(); }
 
+
+  // подписи в духе набора: понятно, кто говорит (имя в рамке), отец — облачко, рассказчик и сыновья — плашка
+  function drawCaptionSet(ctx, p) {
+    const set = ART.set; if (STYLE.pixel || (set !== 'sin' && set !== 'mos')) return false;
+    const who = WHO[p.who] || WHO.narr, father = p.who === 'father', isLine = p.who && p.who !== 'narr';
+    const shown = tr(p.text).slice(0, Math.floor(st.t * 40)), size = isLine ? 25 : 22, mw = 600;
+    const lines = wrap(ctx, p.text, mw, size, 700);
+    ctx.font = `700 ${size}px "Cormorant Garamond", serif`;
+    const tw = Math.max(...lines.map(l => ctx.measureText(l).width)), nm = p.name || (p.who === 'narr' ? '' : who.name);
+    const bw = Math.min(740, Math.max(380, tw * 1.12 + 72)), bh = lines.length * size * 1.28 + (nm ? 50 : 34);
+    const x = W / 2 - bw / 2, y = isLine || p.capLow ? H - bh - 64 : 44, a = Math.min(1, st.t * 3);
+    ctx.save(); ctx.globalAlpha = a;
+    if (set === 'sin') {
+      if (father) { // облачко: белое, хвост вниз-влево к говорящему
+        ctx.fillStyle = '#f7f3ea'; ctx.strokeStyle = '#000'; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.roundRect(x, y, bw, bh, 22);
+        ctx.moveTo(x + 70, y + bh - 2); ctx.lineTo(x + 40, y + bh + 30); ctx.lineTo(x + 104, y + bh - 2); ctx.fill(); ctx.stroke();
+        ctx.fillRect(x + 72, y + bh - 5, 30, 7); ctx.fillStyle = '#f7f3ea'; ctx.fillRect(x + 73, y + bh - 6, 29, 9);
+      } else { ctx.fillStyle = '#040404'; ctx.fillRect(x, y, bw, bh); ctx.strokeStyle = '#f2eee4'; ctx.lineWidth = 3.5; ctx.strokeRect(x, y, bw, bh); ctx.lineWidth = 1; ctx.strokeRect(x + 6, y + 6, bw - 12, bh - 12); }
+    } else { // мозаика: тёмная плита, кайма из тессер
+      ctx.fillStyle = 'rgba(22,18,16,0.93)'; ctx.fillRect(x, y, bw, bh);
+      const cols = ['#d6ac60', '#b04e30', '#e8e0cc', '#78706a'], t = 8; let i = 0;
+      for (let xx = x; xx < x + bw; xx += t) { for (const yy of [y, y + bh - t]) { ctx.fillStyle = cols[(i + (yy > y ? 2 : 0)) % 4]; ctx.fillRect(xx + 0.5, yy + 0.5, t - 1, t - 1); } i++; }
+      for (let yy = y + t; yy < y + bh - t; yy += t) { for (const xx of [x, x + bw - t]) { ctx.fillStyle = cols[(i + (xx > x ? 3 : 1)) % 4]; ctx.fillRect(xx + 0.5, yy + 0.5, t - 1, t - 1); } i++; }
+      if (father) { ctx.strokeStyle = '#b04e30'; ctx.lineWidth = 2; ctx.strokeRect(x + 12, y + 12, bw - 24, bh - 24); }
+    }
+    let yy = y + 30;
+    if (nm) { text(ctx, nm.toUpperCase(), W / 2, yy, { size: 15, sc: true, color: set === 'sin' ? (father ? '#a01814' : '#d8221c') : '#d6ac60', spacing: 4, shadow: false }); yy += 24; }
+    const dark = set === 'sin' && father;
+    wrap(ctx, shown, mw, size, 700).forEach((l, i) => text(ctx, l, W / 2, yy + i * size * 1.28, { size, weight: 700, color: dark ? '#0c0c0c' : set === 'sin' ? '#f4f0e6' : '#efe2c4', shadow: false }));
+    ctx.restore(); return true;
+  }
   function drawCaption(ctx, p) {
+    if (drawCaptionSet(ctx, p)) return;
     const who = WHO[p.who] || WHO.narr;
     const shown = tr(p.text).slice(0, Math.floor(st.t * 40));
     const isLine = p.who && p.who !== 'narr';
